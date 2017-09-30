@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_LEN    99//词素最大字符数
+#define MAX_LEN    1500//词素最大字符数
 
 #define LETTER     0
 #define DIG        1
@@ -82,8 +82,11 @@ int isSYM()
 		case '#':
 		case ':':
 		case '@':
+        case '&':
+        case '|':
 		case '_':
 		case '=':
+        case '"':
 		case '>':
 		case '<':
 		case '/':return 1;break;
@@ -93,7 +96,6 @@ int isSYM()
 
 void addChar()
 {
-    printf("%d",lexLen);
 	if (lexLen <= MAX_LEN-2)
 	{
 		lexeme[lexLen++] = theCha;
@@ -105,7 +107,6 @@ void addChar()
 
 int getCha()
 {
-	int i = 0;//判断line读到哪里
     static int firstRun = 1;
 	if(firstRun)//当第一次读时，只读两个
 	{
@@ -137,13 +138,52 @@ int getCha()
 		else
 			charClass = UNKNOWN;
 	}
-	printf("%c",theCha);
+	//printf("%c",theCha);
 }
 
 void getNon()
 {
 	while(theCha == ' '|| theCha == '\n')
 		getCha();
+}
+
+void getLineNote()
+{
+    while(nextCha != '\n')
+    {
+        getCha();
+        addChar();
+    }
+}
+
+void getParagraphNote()
+{
+	while(!(theCha == '*' && nextCha == '/'))
+    {
+        getCha();
+        addChar();
+    }
+    getCha();
+    addChar();
+}
+
+void getString()
+{
+	addChar();
+	nextToken = OPERATOR;
+	printf("<%3d,%s>\n",nextToken,lexeme);
+	lexLen = 0;
+	while(nextCha != '"' || (nextCha == '"' && theCha == '\\'))
+	{
+		getCha();
+		addChar();
+	}
+	nextToken = CONSTANT;
+	printf("<%3d,%s>\n",nextToken,lexeme);
+	lexLen = 0;
+	getCha();
+	addChar();
+	nextToken = OPERATOR;
 }
 
 int checkSymbol()
@@ -173,6 +213,17 @@ int checkSymbol()
 			addChar();
 			nextToken = OPERATOR;
 			break;
+		}
+		case '&':{
+		    addChar();
+		    nextToken = OPERATOR;
+		    if(nextCha == '&')
+            {
+                getCha();
+                addChar();
+                nextToken = OPERATOR;
+            }
+            break;
 		}
 		case '=':{
 			addChar();
@@ -213,14 +264,14 @@ int checkSymbol()
 			}
 			break;
 		}
-		// case '!':{
-		// 	if (nextCha = '=')
-		// 	{
-		// 		getCha();
-		// 		addChar();
-		// 		nextToken = OPERATOR;
-		// 	}
-		// }
+        case '!':{
+            if (nextCha == '=')
+            {
+                getCha();
+		 		addChar();
+		 		nextToken = OPERATOR;
+		 	}
+        }
 		case '/':{
 		    addChar();
 		    nextToken = OPERATOR;
@@ -228,20 +279,27 @@ int checkSymbol()
 			{
 			    getCha();
 				addChar();
-				while(theCha != '\n' && theCha != EOF)
-                {
-                    addChar();
-                    getCha();
-                }
+                getLineNote();
                 nextToken = NOTE;
-				break;
 			}
+			if (nextCha == '*')
+            {
+                getCha();
+                addChar();
+                getParagraphNote();
+                nextToken = NOTE;
+            }
+            break;
 		}
-		// case '"':break;
-		// case '"':break;
+        case '"':{
+            if (proCha != '\\')
+            	getString();
+            break;
+        }
 		case EOF:{
 			addChar();
 			nextToken = EOF;
+			break;
 		}
 		default:{
 			printf("ERROR:unknown charator\n");
@@ -275,7 +333,7 @@ int lexer()
 		case LETTER:{
 			addChar();
 			getCha();
-			while(charClass == LETTER || charClass == DIG || charClass == SYM)
+			while(charClass == LETTER || charClass == DIG || theCha == '_')
 			{
 				addChar();
 				getCha();
@@ -309,7 +367,7 @@ int lexer()
 			break;
 		}
 	}
-	printf("<%d,%s>\n",nextToken,lexeme);
+	printf("<%3d,%s>\n",nextToken,lexeme);
 	return nextToken;
 }
 
@@ -321,7 +379,6 @@ int main(int argc, char const *argv[])
 		printf("ERROR\n");
 		return 0;
 	}
-	getNon();
 	getCha();
 	while(nextToken != EOF)
         lexer();
