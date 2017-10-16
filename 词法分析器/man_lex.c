@@ -1,9 +1,9 @@
 /*******************************************************************
-* IDENTIFIER (标识符)： 变量名和函数名(字符开头)
-* KEYWORD:保留字
-* OPERATOR:+ - * / % = == != <= >= > < , ; . ' ' " " //  ( ) [ ] { }
-* CONSTANT: 字符串或字符常量,数字
-* NOTE: 注释
+* IDENTIFIER： 	变量名和函数名(字符开头)
+* KEYWORD:		保留字
+* OPERATOR:		+ - * / % = == != <= >= > < , ; . ' ' " " //  ( ) [ ] { }
+* CONSTANT: 	字符串或字符常量,数字
+* NOTE: 		注释
 * *****************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
@@ -138,7 +138,6 @@ int getCha()
 		else
 			charClass = UNKNOWN;
 	}
-	//printf("%c",theCha);
 }
 
 void getNon()
@@ -373,15 +372,18 @@ int lexer()
 
 int main(int argc, char const *argv[])
 {
-	stream = fopen("abcd.c","r+");
-	if (stream == NULL)
+	if (argc > 1)
 	{
-		printf("ERROR\n");
-		return 0;
-	}
+       if (!(stream = fopen(argv[1], "r"))) {
+           perror(argv[1]);
+           return 1;
+       }
+   }
+
 	getCha();
 	while(nextToken != EOF)
         lexer();
+    fclose(stream);
 
 	return 0;
 }
